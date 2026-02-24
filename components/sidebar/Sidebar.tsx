@@ -8,6 +8,7 @@ import { Loader2, MessageSquare, Users, Settings, Moon, ChevronRight, Menu } fro
 import { ScrollArea } from "../ui/scroll-area";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 // Relevant nav items for a chat app
 const topNavCategories = [
@@ -112,6 +113,20 @@ export function Sidebar({
 
             {/* Bottom Preferences Nav */}
             <div className="px-3 pb-4 pt-2 border-t border-white/5 shrink-0">
+                {/* User Profile Info */}
+                <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-xl bg-white/5 border border-white/10">
+                    <UserButton
+                        afterSignOutUrl="/sign-in"
+                        appearance={{
+                            elements: { userButtonAvatarBox: "w-8 h-8" },
+                        }}
+                    />
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium text-white truncate">My Profile</span>
+                        <span className="text-[10px] text-slate-400">Manage account</span>
+                    </div>
+                </div>
+
                 {bottomNavCategories.map((item) => (
                     <button
                         key={item.name}
