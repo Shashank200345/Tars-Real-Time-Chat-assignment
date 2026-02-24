@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { PrimarySidebar } from "@/components/sidebar/PrimarySidebar";
 import { Sidebar as SecondarySidebar } from "@/components/sidebar/Sidebar";
 import { cn } from "@/lib/utils";
@@ -12,9 +14,13 @@ export function ChatsLayoutShell({
     children: React.ReactNode;
 }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    // We can also let desktop users collapse the secondary sidebar for a focus mode if wanted,
-    // but for now, we'll keep it standard on desktop and sliding on mobile.
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
+    const ensureUser = useMutation(api.users.ensureUser);
+
+    // Auto-create user record if missing
+    useEffect(() => {
+        ensureUser().catch(() => { });
+    }, [ensureUser]);
 
     return (
         <div className="flex h-[100dvh] bg-[#0A0A0A] text-slate-100 overflow-hidden font-sans relative">
