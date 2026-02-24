@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { Search, Plus } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
@@ -48,16 +46,16 @@ export function UserSearch() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    className="rounded-full shadow-sm bg-indigo-600 hover:bg-indigo-500 text-white hover:text-white"
+                {/* Adjusted the button to match the purple + circle from the screenshot */}
+                <button
+                    className="w-6 h-6 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-sm"
                 >
-                    <Plus className="h-5 w-5" />
-                </Button>
+                    <Plus className="h-4 w-4" />
+                </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-slate-900 border border-slate-700 text-slate-100 p-0 overflow-hidden shadow-2xl">
-                <DialogHeader className="p-4 border-b border-slate-800 bg-slate-900/50">
+            {/* ... Rest of the dialog remains the same dark theme ... */}
+            <DialogContent className="sm:max-w-md bg-[#111] border border-white/10 text-slate-100 p-0 overflow-hidden shadow-2xl">
+                <DialogHeader className="p-4 border-b border-white/5 bg-[#0B0B0B]">
                     <DialogTitle className="text-lg font-semibold flex items-center gap-2">
                         New Contact
                     </DialogTitle>
@@ -67,19 +65,19 @@ export function UserSearch() {
                             placeholder="Search users..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 bg-slate-950 border-slate-800 text-slate-200 placeholder:text-slate-500 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 focus-visible:border-indigo-500 h-10"
+                            className="pl-9 bg-[#1A1A1A] border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 focus-visible:border-indigo-500 h-10"
                             autoFocus
                         />
                     </div>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-[300px] h-[300px]">
+                <ScrollArea className="max-h-[300px] h-[300px] bg-[#0A0A0A]">
                     {users === undefined ? (
                         <div className="flex justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                         </div>
                     ) : filteredUsers?.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500">
+                        <div className="text-center py-8 text-slate-500 text-sm">
                             No users found matching "{search}"
                         </div>
                     ) : (
@@ -88,10 +86,10 @@ export function UserSearch() {
                                 <div
                                     key={user._id}
                                     onClick={() => startChat(user._id)}
-                                    className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors group"
+                                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <UserAvatar name={user.name} imageUrl={user.imageUrl} />
+                                        <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-10 w-10 border border-white/10" />
                                         <span className="font-medium text-slate-200">
                                             {user.name}
                                         </span>
