@@ -26,6 +26,8 @@ export default defineSchema({
         senderId: v.id("users"),
         content: v.string(),
         isDeleted: v.boolean(), // soft delete
+        replyToId: v.optional(v.id("messages")), // reply to another message
+        forwardedFrom: v.optional(v.string()), // original sender name if forwarded
         reactions: v.optional(
             v.array(
                 v.object({

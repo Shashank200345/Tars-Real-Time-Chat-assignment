@@ -6,6 +6,7 @@ export const send = mutation({
     args: {
         conversationId: v.id("conversations"),
         content: v.string(),
+        replyToId: v.optional(v.id("messages")),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
@@ -23,6 +24,7 @@ export const send = mutation({
             senderId: user._id,
             content: args.content,
             isDeleted: false,
+            ...(args.replyToId ? { replyToId: args.replyToId } : {}),
         });
 
         // Update conversation's last message for sidebar preview
@@ -65,15 +67,69 @@ export const list = query({
             .order("asc")
             .collect();
 
-        // Enrich with sender info
+        // Enrich with sender info and reply data
         const enriched = await Promise.all(
             messages.map(async (msg) => {
                 const sender = await ctx.db.get(msg.senderId);
-                return { ...msg, sender };
+
+                // Enrich reply-to message if present
+                let replyTo = null;
+                if (msg.replyToId) {
+                    const replyMsg = await ctx.db.get(msg.replyToId);
+                    if (replyMsg) {
+                        const replySender = await ctx.db.get(replyMsg.senderId);
+                        replyTo = {
+                            _id: replyMsg._id,
+                            content: replyMsg.isDeleted ? "This message was deleted" : replyMsg.content,
+                            senderName: replySender?.name || "Unknown",
+                        };
+                    }
+                }
+
+                return { ...msg, sender, replyTo };
             })
         );
 
         return enriched;
+    },
+});
+
+// Forward a message to another conversation
+export const forward = mutation({
+    args: {
+        messageId: v.id("messages"),
+        targetConversationId: v.id("conversations"),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (!user) throw new Error("User not found");
+
+        const originalMsg = await ctx.db.get(args.messageId);
+        if (!originalMsg) throw new Error("Message not found");
+
+        const originalSender = await ctx.db.get(originalMsg.senderId);
+
+        const newMsgId = await ctx.db.insert("messages", {
+            conversationId: args.targetConversationId,
+            senderId: user._id,
+            content: originalMsg.content,
+            isDeleted: false,
+            forwardedFrom: originalSender?.name || "Unknown",
+        });
+
+        await ctx.db.patch(args.targetConversationId, {
+            lastMessageId: newMsgId,
+            lastMessageTime: Date.now(),
+        });
+
+        return newMsgId;
     },
 });
 
