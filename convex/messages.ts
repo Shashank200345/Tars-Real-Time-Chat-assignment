@@ -186,3 +186,72 @@ export const getReadReceipt = query({
             .unique();
     },
 });
+
+// Broadcast a message to all active conversations
+export const sendBroadcast = mutation({
+    args: {
+        content: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (!user) throw new Error("User not found");
+
+        // Find all conversations where the user is a participant
+        const allConversations = await ctx.db.query("conversations").collect();
+        const myConversations = allConversations.filter((c) =>
+            c.participants.includes(user._id)
+        );
+
+        if (myConversations.length === 0) {
+            throw new Error("No conversations to broadcast to");
+        }
+
+        const now = Date.now();
+
+        // Send the message to all of them
+        const messagePromises = myConversations.map(async (conv) => {
+            const messageId = await ctx.db.insert("messages", {
+                conversationId: conv._id,
+                senderId: user._id,
+                content: args.content,
+                isDeleted: false,
+            });
+
+            // Update conversation last message info
+            await ctx.db.patch(conv._id, {
+                lastMessageId: messageId,
+                lastMessageTime: now,
+            });
+
+            // Update read receipt for sender
+            const existingReceipt = await ctx.db
+                .query("readReceipts")
+                .withIndex("by_conversation_user", (q) =>
+                    q.eq("conversationId", conv._id).eq("userId", user._id)
+                )
+                .unique();
+
+            if (existingReceipt) {
+                await ctx.db.patch(existingReceipt._id, { lastReadMessageId: messageId });
+            } else {
+                await ctx.db.insert("readReceipts", {
+                    conversationId: conv._id,
+                    userId: user._id,
+                    lastReadMessageId: messageId,
+                });
+            }
+
+            return messageId;
+        });
+
+        await Promise.all(messagePromises);
+        return myConversations.length; // return count of conversations reached
+    },
+});

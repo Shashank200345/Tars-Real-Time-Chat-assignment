@@ -118,3 +118,39 @@ export const getById = query({
         return await ctx.db.get(args.conversationId);
     },
 });
+
+// Create a new group conversation
+export const createGroup = mutation({
+    args: {
+        participantIds: v.array(v.id("users")),
+        groupName: v.string()
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const me = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (!me) throw new Error("User not found");
+
+        // Ensure current user is in the group and remove duplicates
+        const participantsSet = new Set([...args.participantIds, me._id]);
+
+        if (participantsSet.size < 2) {
+            throw new Error("Group must have at least 2 members");
+        }
+
+        const participants = Array.from(participantsSet);
+
+        // Create new Group chat
+        return await ctx.db.insert("conversations", {
+            participants,
+            isGroup: true,
+            groupName: args.groupName,
+            lastMessageTime: Date.now(),
+        });
+    },
+});
