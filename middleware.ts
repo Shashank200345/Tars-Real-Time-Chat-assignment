@@ -7,7 +7,7 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-    if (!isPublicRoute(request)) {
+    if (!isPublicRoute(request) && !request.nextUrl.pathname.startsWith('/api/clerk-webhook')) {
         await auth.protect();
     }
 });
