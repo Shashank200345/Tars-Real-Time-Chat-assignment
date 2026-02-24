@@ -25,13 +25,6 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
     const params = useParams();
     const isActive = params.id === conversation._id;
 
-    // Since we only do 1-on-1s right now, the "other user" is always index 1
-    // (Assuming backend filters the current user out or we pick the first non-matching one)
-    // Let's assume the backend returned exact participants cleanly, but to be safe:
-    // Usually listForMe returns [me, other]. We want the `other` one for the avatar.
-    // The query `listForMe` actually returns BOTH. For UI, we just need one of them (the other person).
-    // Note: the backend returns `participants: participants.filter(Boolean)`. This includes ME.
-    // In a real app we'd filter ME out in the UI or backend. Since this is 1-1, let's just pick the last one.
     const otherUser =
         conversation.participants.length === 2
             ? conversation.participants[1]
@@ -43,10 +36,10 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
         <Link
             href={`/chats/${conversation._id}`}
             className={cn(
-                "flexItems-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer mb-1 group relative overflow-hidden",
+                "flex items-center gap-3 p-2 rounded-xl transition-all duration-200 cursor-pointer mb-0.5 group relative overflow-hidden",
                 isActive
-                    ? "bg-indigo-600 shadow-md shadow-indigo-900/20"
-                    : "hover:bg-slate-800 text-slate-300"
+                    ? "bg-white/10 shadow-sm"
+                    : "hover:bg-white/5 text-slate-300"
             )}
         >
             <div className="flex w-full items-center gap-3 relative z-10">
@@ -54,50 +47,36 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
                     name={otherUser.name}
                     imageUrl={otherUser.imageUrl}
                     isOnline={otherUser.isOnline}
-                    className="h-12 w-12"
+                    className="h-8 w-8 text-xs shrink-0"
                 />
 
                 <div className="flex flex-col flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
+                    <div className="flex justify-between items-center">
                         <span
                             className={cn(
-                                "font-semibold truncate pr-2 tracking-tight",
-                                isActive ? "text-white" : "text-slate-100 group-hover:text-white"
+                                "font-medium text-sm truncate pr-2 tracking-tight",
+                                isActive ? "text-white" : "text-slate-300 group-hover:text-white"
                             )}
                         >
                             {otherUser.name}
                         </span>
-                        {conversation.lastMessageTime && (
-                            <span
-                                className={cn(
-                                    "text-xs shrink-0 font-medium",
-                                    conversation.unreadCount && conversation.unreadCount > 0 && !isActive
-                                        ? "text-emerald-400"
-                                        : isActive
-                                            ? "text-indigo-200"
-                                            : "text-slate-500"
-                                )}
-                            >
-                                {formatMessageTime(conversation.lastMessageTime)}
-                            </span>
-                        )}
                     </div>
 
                     <div className="flex justify-between items-center gap-2">
                         <span
                             className={cn(
-                                "text-sm truncate w-full",
-                                isActive ? "text-indigo-200" : "text-slate-400"
+                                "text-[11px] truncate w-full",
+                                isActive ? "text-slate-300" : "text-slate-500"
                             )}
                         >
-                            {conversation.lastMessage?.content || "Start a conversation..."}
+                            {conversation.lastMessage?.content || "No messages yet"}
                         </span>
 
                         {/* Unread Badge */}
                         {conversation.unreadCount ? (
                             conversation.unreadCount > 0 &&
                             !isActive && (
-                                <div className="shrink-0 bg-emerald-500 text-slate-900 text-[10px] font-bold h-5 min-w-[20px] px-1.5 rounded-full flex items-center justify-center shadow-sm">
+                                <div className="shrink-0 bg-blue-500 text-white text-[9px] font-bold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center">
                                     {conversation.unreadCount}
                                 </div>
                             )
