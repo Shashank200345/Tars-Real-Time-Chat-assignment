@@ -73,13 +73,10 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
                         </span>
 
                         {/* Unread Badge */}
-                        {conversation.unreadCount ? (
-                            conversation.unreadCount > 0 &&
-                            !isActive && (
-                                <div className="shrink-0 bg-blue-500 text-white text-[9px] font-bold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center">
-                                    {conversation.unreadCount}
-                                </div>
-                            )
+                        {conversation.unreadCount && conversation.unreadCount > 0 && !isActive ? (
+                            <div className="shrink-0 bg-red-500 text-white text-[9px] font-bold h-[18px] min-w-[18px] px-1.5 rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.4)] animate-pulse">
+                                {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+                            </div>
                         ) : null}
                     </div>
                 </div>
