@@ -80,9 +80,9 @@ export function CreateGroupModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md bg-[#111] border border-white/10 text-slate-100 p-0 shadow-2xl overflow-hidden">
-                <DialogHeader className="p-4 border-b border-white/5 bg-[#0B0B0B]">
-                    <DialogTitle className="text-lg font-semibold flex items-center gap-2 text-white">
+            <DialogContent className="sm:max-w-md bg-card border border-border text-card-foreground p-0 shadow-2xl overflow-hidden">
+                <DialogHeader className="p-4 border-b border-border bg-background">
+                    <DialogTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
                         <Users className="w-5 h-5 text-indigo-500" />
                         Create Group Chat
                     </DialogTitle>
@@ -92,22 +92,22 @@ export function CreateGroupModal({
                             placeholder="Group Name (e.g. Engineering Team)"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
-                            className="bg-[#1A1A1A] border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                            className="bg-secondary border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
                         />
 
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search users to add..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="pl-9 bg-[#1A1A1A] border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                                className="pl-9 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
                             />
                         </div>
                     </div>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-[250px] h-[250px] bg-[#0A0A0A]">
+                <ScrollArea className="max-h-[250px] h-[250px] bg-background">
                     {users === undefined ? (
                         <div className="flex justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
@@ -127,13 +127,13 @@ export function CreateGroupModal({
                                         className={cn(
                                             "flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border",
                                             isSelected
-                                                ? "bg-indigo-500/10 border-indigo-500/50"
-                                                : "border-transparent hover:bg-white/5"
+                                                ? "bg-primary/10 border-primary/50"
+                                                : "border-transparent hover:bg-accent"
                                         )}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-9 w-9 border border-white/10" />
-                                            <span className="font-medium text-slate-200">
+                                            <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-9 w-9 border border-border" />
+                                            <span className="font-medium text-foreground">
                                                 {user.name}
                                             </span>
                                         </div>
@@ -147,15 +147,15 @@ export function CreateGroupModal({
                     )}
                 </ScrollArea>
 
-                <div className="p-4 border-t border-white/5 bg-[#0B0B0B] flex justify-between items-center">
-                    <span className="text-sm text-slate-400">
+                <div className="p-4 border-t border-border bg-background flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">
                         {selectedUserIds.length} selected
                     </span>
                     <div className="flex gap-2">
                         <Button
                             variant="ghost"
                             onClick={() => onOpenChange(false)}
-                            className="text-slate-300 hover:text-white hover:bg-white/5"
+                            className="text-muted-foreground hover:text-foreground hover:bg-accent"
                         >
                             Cancel
                         </Button>

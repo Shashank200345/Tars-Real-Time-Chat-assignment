@@ -54,8 +54,8 @@ export function UserSearch() {
                 </button>
             </DialogTrigger>
             {/* ... Rest of the dialog remains the same dark theme ... */}
-            <DialogContent className="sm:max-w-md bg-[#111] border border-white/10 text-slate-100 p-0 overflow-hidden shadow-2xl">
-                <DialogHeader className="p-4 border-b border-white/5 bg-[#0B0B0B]">
+            <DialogContent className="sm:max-w-md bg-card border border-border text-card-foreground p-0 overflow-hidden shadow-2xl">
+                <DialogHeader className="p-4 border-b border-border bg-background">
                     <DialogTitle className="text-lg font-semibold flex items-center gap-2">
                         New Contact
                     </DialogTitle>
@@ -65,13 +65,13 @@ export function UserSearch() {
                             placeholder="Search users..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 bg-[#1A1A1A] border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500 focus-visible:ring-offset-0 focus-visible:border-indigo-500 h-10"
+                            className="pl-9 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary h-10"
                             autoFocus
                         />
                     </div>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-[300px] h-[300px] bg-[#0A0A0A]">
+                <ScrollArea className="max-h-[300px] h-[300px] bg-background">
                     {users === undefined ? (
                         <div className="flex justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
@@ -86,11 +86,11 @@ export function UserSearch() {
                                 <div
                                     key={user._id}
                                     onClick={() => startChat(user._id)}
-                                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group"
+                                    className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary cursor-pointer transition-colors group"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-10 w-10 border border-white/10" />
-                                        <span className="font-medium text-slate-200">
+                                        <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-10 w-10 border border-border" />
+                                        <span className="font-medium text-foreground">
                                             {user.name}
                                         </span>
                                     </div>

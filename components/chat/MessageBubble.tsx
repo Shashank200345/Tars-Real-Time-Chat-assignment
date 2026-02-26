@@ -92,7 +92,7 @@ export function MessageBubble({
     if (message.isDeleted) {
         return (
             <div className={cn("flex gap-3 max-w-[85%]", isMe ? "self-end" : "self-start")}>
-                <div className="bg-[#111111] border border-white/[0.05] text-slate-500 italic px-4 py-3 text-[13px] rounded-2xl">
+                <div className="bg-card border border-border text-muted-foreground italic px-4 py-3 text-[13px] rounded-2xl">
                     🗑️ This message was deleted
                 </div>
             </div>
@@ -109,21 +109,21 @@ export function MessageBubble({
                 <UserAvatar
                     name={message.sender.name}
                     imageUrl={message.sender.imageUrl}
-                    className="h-8 w-8 mt-1 border border-white/10 rounded-full shrink-0"
+                    className="h-8 w-8 mt-1 border border-border rounded-full shrink-0"
                 />
             )}
 
             <div className={cn("flex flex-col gap-1 min-w-0 relative", isMe ? "items-end" : "items-start")}>
                 {!isMe && message.sender && (
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-slate-300">{message.sender.name}</span>
-                        <span className="text-[10px] text-slate-500">{time}</span>
+                        <span className="text-sm font-medium text-foreground">{message.sender.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{time}</span>
                     </div>
                 )}
 
                 {/* Forwarded label */}
                 {message.forwardedFrom && (
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500 italic">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground italic">
                         <Forward className="w-3 h-3" />
                         <span>Forwarded from {message.forwardedFrom}</span>
                     </div>
@@ -133,11 +133,11 @@ export function MessageBubble({
                     {/* Reply preview (quoted message) */}
                     {message.replyTo && (
                         <div className={cn(
-                            "mb-1 px-3 py-1.5 border-l-2 border-blue-500 bg-white/5 rounded-r-lg text-[11px] max-w-[250px]",
+                            "mb-1 px-3 py-1.5 border-l-2 border-primary bg-secondary/50 rounded-r-lg text-[11px] max-w-[250px]",
                             isMe ? "ml-auto" : ""
                         )}>
-                            <span className="text-blue-400 font-medium">{message.replyTo.senderName}</span>
-                            <p className="text-slate-400 truncate">{message.replyTo.content}</p>
+                            <span className="text-primary font-medium">{message.replyTo.senderName}</span>
+                            <p className="text-muted-foreground truncate">{message.replyTo.content}</p>
                         </div>
                     )}
 
@@ -169,8 +169,10 @@ export function MessageBubble({
                         <div
                             style={{ wordBreak: "break-word" }}
                             className={cn(
-                                "bg-[#111111] border border-white/[0.05] text-slate-300 px-4 py-3 text-[13px] leading-relaxed shadow-sm text-left max-w-full",
-                                isMe ? "rounded-2xl rounded-tr-sm" : "rounded-2xl rounded-tl-sm"
+                                "px-4 py-3 text-[13px] leading-relaxed shadow-sm text-left max-w-full",
+                                isMe
+                                    ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+                                    : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm"
                             )}
                         >
                             {message.content}
@@ -181,7 +183,7 @@ export function MessageBubble({
                     {showActions && (
                         <div
                             className={cn(
-                                "absolute -top-9 flex items-center gap-0.5 bg-[#1A1A1A] border border-white/10 rounded-lg p-0.5 shadow-xl z-30 animate-fade-in",
+                                "absolute -top-9 flex items-center gap-0.5 bg-card border border-border rounded-lg p-0.5 shadow-xl z-30 animate-fade-in",
                                 isMe ? "right-0" : "left-0"
                             )}
                         >
@@ -189,38 +191,38 @@ export function MessageBubble({
                                 <button
                                     key={emoji}
                                     onClick={() => addReaction({ messageId: message._id, emoji })}
-                                    className="hover:bg-white/10 rounded p-1 text-sm transition-colors"
+                                    className="hover:bg-accent rounded p-1 text-sm transition-colors"
                                     title={`React with ${emoji}`}
                                 >
                                     {emoji}
                                 </button>
                             ))}
-                            <div className="w-px h-5 bg-white/10 mx-0.5" />
+                            <div className="w-px h-5 bg-border mx-0.5" />
                             <button
                                 onClick={handleReply}
-                                className="hover:bg-white/10 text-slate-400 hover:text-blue-400 rounded p-1.5 transition-colors"
+                                className="hover:bg-accent text-muted-foreground hover:text-primary rounded p-1.5 transition-colors"
                                 title="Reply"
                             >
                                 <Reply className="w-3.5 h-3.5" />
                             </button>
                             <button
                                 onClick={handleForward}
-                                className="hover:bg-white/10 text-slate-400 hover:text-green-400 rounded p-1.5 transition-colors"
+                                className="hover:bg-accent text-muted-foreground hover:text-green-500 rounded p-1.5 transition-colors"
                                 title="Forward"
                             >
                                 <Forward className="w-3.5 h-3.5" />
                             </button>
                             <button
                                 onClick={handleCopy}
-                                className="hover:bg-white/10 text-slate-400 hover:text-white rounded p-1.5 transition-colors"
+                                className="hover:bg-accent text-muted-foreground hover:text-foreground rounded p-1.5 transition-colors"
                                 title="Copy text"
                             >
-                                {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
                             {isMe && (
                                 <button
                                     onClick={() => softDelete({ messageId: message._id })}
-                                    className="hover:bg-red-500/20 text-red-400 rounded p-1.5 transition-colors"
+                                    className="hover:bg-destructive/20 text-destructive rounded p-1.5 transition-colors"
                                     title="Delete message"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -237,17 +239,17 @@ export function MessageBubble({
                             <button
                                 key={emoji}
                                 onClick={() => addReaction({ messageId: message._id, emoji })}
-                                className="flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-2 py-0.5 text-xs transition-colors"
+                                className="flex items-center gap-1 bg-secondary/50 hover:bg-secondary border border-border rounded-full px-2 py-0.5 text-xs transition-colors"
                             >
                                 <span>{emoji}</span>
-                                <span className="text-slate-400">{count}</span>
+                                <span className="text-muted-foreground">{count}</span>
                             </button>
                         ))}
                     </div>
                 )}
 
                 {isMe && (
-                    <span className="text-[10px] text-slate-500 mt-0.5 pr-1">
+                    <span className="text-[10px] text-muted-foreground mt-0.5 pr-1">
                         {time}
                     </span>
                 )}

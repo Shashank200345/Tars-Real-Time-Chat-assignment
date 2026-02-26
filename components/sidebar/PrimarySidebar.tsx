@@ -24,7 +24,7 @@ export function PrimarySidebar() {
 
     return (
         <>
-            <div className="w-[72px] h-full bg-[#050505] border-r border-white/5 flex flex-col items-center py-4 gap-4 z-20 shrink-0">
+            <div className="w-[72px] h-full bg-background border-r border-border flex flex-col items-center py-4 gap-4 z-20 shrink-0">
                 <TooltipProvider delayDuration={0}>
                     {/* App Logo / Top Icon */}
                     <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center mb-2 shadow-lg shadow-blue-900/20 cursor-pointer hover:bg-blue-500 transition-colors">
@@ -41,7 +41,7 @@ export function PrimarySidebar() {
                     {/* Nav Icons */}
                     <div className="flex-1 flex flex-col gap-3 w-full items-center">
                         {/* Chats Link */}
-                        <Tooltip placement="right">
+                        <Tooltip>
                             <TooltipTrigger asChild>
                                 <Link href="/chats" className="relative group w-full flex justify-center">
                                     <div className={cn(
@@ -51,8 +51,8 @@ export function PrimarySidebar() {
                                     <div className={cn(
                                         "w-12 h-12 rounded-[24px] flex items-center justify-center transition-all duration-300 overflow-hidden",
                                         isChatsActive
-                                            ? "bg-blue-600 text-white rounded-[16px]"
-                                            : "bg-white/5 hover:bg-blue-500 hover:text-white hover:rounded-[16px] text-slate-400"
+                                            ? "bg-primary text-primary-foreground rounded-[16px]"
+                                            : "bg-secondary hover:bg-primary hover:text-primary-foreground hover:rounded-[16px] text-muted-foreground"
                                     )}>
                                         <MessageSquare className="w-6 h-6 stroke-[1.5]" />
                                     </div>
@@ -64,14 +64,14 @@ export function PrimarySidebar() {
                         </Tooltip>
 
                         {/* Broadcast Button */}
-                        <Tooltip placement="right">
+                        <Tooltip>
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => setBroadcastOpen(true)}
                                     className="relative group w-full flex justify-center"
                                 >
                                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 bg-white rounded-r-md transition-all duration-300 h-0 group-hover:h-5 opacity-50" />
-                                    <div className="w-12 h-12 rounded-[24px] flex items-center justify-center transition-all duration-300 overflow-hidden bg-white/5 hover:bg-orange-500 hover:text-white hover:rounded-[16px] text-slate-400">
+                                    <div className="w-12 h-12 rounded-[24px] flex items-center justify-center transition-all duration-300 overflow-hidden bg-secondary hover:bg-orange-500 hover:text-white hover:rounded-[16px] text-muted-foreground">
                                         <RadioTower className="w-6 h-6 stroke-[1.5]" />
                                     </div>
                                 </button>
@@ -82,7 +82,7 @@ export function PrimarySidebar() {
                         </Tooltip>
 
                         {/* Add Group Button */}
-                        <Tooltip placement="right">
+                        <Tooltip>
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => setGroupOpen(true)}

@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Send, Smile, X, Reply } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -33,6 +34,7 @@ export function MessageInput({
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { theme } = useTheme();
 
     // Focus input when replying
     useEffect(() => {
@@ -119,18 +121,18 @@ export function MessageInput({
     };
 
     return (
-        <div className="bg-[#0A0A0A] pt-2 pb-6 px-6 shrink-0 relative mt-auto z-10">
+        <div className="bg-background pt-2 pb-6 px-6 shrink-0 relative mt-auto z-10">
             {/* Reply context bar */}
             {replyTo && (
-                <div className="flex items-center gap-3 mb-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 animate-fade-in">
+                <div className="flex items-center gap-3 mb-2 bg-secondary/50 border border-border rounded-xl px-4 py-2.5 animate-fade-in">
                     <Reply className="w-4 h-4 text-blue-400 shrink-0" />
                     <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-3">
                         <span className="text-xs font-medium text-blue-400">{replyTo.senderName}</span>
-                        <p className="text-xs text-slate-400 truncate">{replyTo.content}</p>
+                        <p className="text-xs text-muted-foreground truncate">{replyTo.content}</p>
                     </div>
                     <button
                         onClick={onCancelReply}
-                        className="text-slate-400 hover:text-white p-1 shrink-0"
+                        className="text-muted-foreground hover:text-foreground p-1 shrink-0"
                     >
                         <X className="w-4 h-4" />
                     </button>
@@ -147,7 +149,7 @@ export function MessageInput({
                         onEmojiClick={onEmojiClick}
                         width={350}
                         height={400}
-                        theme={"dark" as any}
+                        theme={theme === "dark" ? "dark" : "light"}
                         searchPlaceholder="Search emojis..."
                         skinTonesDisabled
                         previewConfig={{ showPreview: false }}
@@ -156,10 +158,10 @@ export function MessageInput({
                 </div>
             )}
 
-            <div className="w-full flex items-center bg-[#1A1A1A] rounded-xl border border-white/10 px-2 shadow-sm focus-within:border-white/20 focus-within:ring-1 focus-within:ring-white/10 transition-all">
+            <div className="w-full flex items-center bg-card rounded-xl border border-border px-2 shadow-sm focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
                 <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`p-2 transition-colors ${showEmojiPicker ? "text-blue-400" : "text-slate-500 hover:text-slate-300"}`}
+                    className={`p-2 transition-colors ${showEmojiPicker ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
                     title="Open emoji picker"
                 >
                     <Smile className="w-5 h-5" />
@@ -172,14 +174,14 @@ export function MessageInput({
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     placeholder={replyTo ? `Reply to ${replyTo.senderName}...` : "Type a reply..."}
-                    className="flex-1 bg-transparent border-none text-slate-200 text-sm h-12 px-2 outline-none placeholder:text-slate-600"
+                    className="flex-1 bg-transparent border-none text-foreground text-sm h-12 px-2 outline-none placeholder:text-muted-foreground"
                     autoFocus
                 />
 
                 <button
                     onClick={handleSend}
                     disabled={!content.trim() || isSending}
-                    className="p-2 m-1 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-slate-600 text-white rounded-lg transition-colors flex items-center justify-center"
+                    className="p-2 m-1 bg-primary hover:bg-primary/90 disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors flex items-center justify-center"
                 >
                     <Send className="w-4 h-4" />
                 </button>

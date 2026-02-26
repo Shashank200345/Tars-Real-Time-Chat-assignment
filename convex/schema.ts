@@ -17,6 +17,7 @@ export default defineSchema({
         participants: v.array(v.id("users")), // works for both DM and group
         isGroup: v.boolean(),
         groupName: v.optional(v.string()),
+        adminIds: v.optional(v.array(v.id("users"))), // Array of group admins
         lastMessageId: v.optional(v.id("messages")),
         lastMessageTime: v.optional(v.number()),
     }).index("by_last_message_time", ["lastMessageTime"]),

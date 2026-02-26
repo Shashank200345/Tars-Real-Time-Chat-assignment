@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 interface ConvProps {
     _id: string;
     isGroup: boolean;
+    groupName?: string;
     participants: Array<{
         _id: string;
         name: string;
@@ -25,12 +26,13 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
     const params = useParams();
     const isActive = params.id === conversation._id;
 
-    const otherUser =
-        conversation.participants.length === 2
-            ? conversation.participants[1]
-            : conversation.participants[0];
+    const otherUser = conversation.participants.find(p => p._id !== params.id) || conversation.participants[0];
 
-    if (!otherUser) return null;
+    if (!conversation.isGroup && !otherUser) return null;
+
+    const displayName = conversation.isGroup ? (conversation.groupName || "Group") : otherUser?.name;
+    const displayImage = conversation.isGroup ? undefined : otherUser?.imageUrl;
+    const displayOnline = conversation.isGroup ? false : otherUser?.isOnline;
 
     return (
         <Link
@@ -38,15 +40,15 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
             className={cn(
                 "flex items-center gap-3 p-2 rounded-xl transition-all duration-200 cursor-pointer mb-0.5 group relative overflow-hidden",
                 isActive
-                    ? "bg-white/10 shadow-sm"
-                    : "hover:bg-white/5 text-slate-300"
+                    ? "bg-accent shadow-sm"
+                    : "hover:bg-accent/50 text-muted-foreground"
             )}
         >
             <div className="flex w-full items-center gap-3 relative z-10">
                 <UserAvatar
-                    name={otherUser.name}
-                    imageUrl={otherUser.imageUrl}
-                    isOnline={otherUser.isOnline}
+                    name={displayName || "Group"}
+                    imageUrl={displayImage}
+                    isOnline={displayOnline}
                     className="h-8 w-8 text-xs shrink-0"
                 />
 
@@ -55,10 +57,10 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
                         <span
                             className={cn(
                                 "font-medium text-sm truncate pr-2 tracking-tight",
-                                isActive ? "text-white" : "text-slate-300 group-hover:text-white"
+                                isActive ? "text-foreground" : "text-foreground group-hover:text-foreground"
                             )}
                         >
-                            {otherUser.name}
+                            {displayName}
                         </span>
                     </div>
 
@@ -66,7 +68,7 @@ export function ConversationItem({ conversation }: { conversation: ConvProps }) 
                         <span
                             className={cn(
                                 "text-[11px] truncate w-full",
-                                isActive ? "text-slate-300" : "text-slate-500"
+                                isActive ? "text-foreground" : "text-muted-foreground"
                             )}
                         >
                             {conversation.lastMessage?.content || "No messages yet"}

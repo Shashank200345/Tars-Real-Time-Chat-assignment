@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // Get or create a 1-on-1 DM conversation between current user and another user
 export const getOrCreateDM = mutation({
@@ -150,7 +151,167 @@ export const createGroup = mutation({
             participants,
             isGroup: true,
             groupName: args.groupName,
+            adminIds: [me._id], // The creator is automatically an admin
             lastMessageTime: Date.now(),
+        });
+    },
+});
+
+// Helper validation function
+const validateAdmin = async (ctx: any, conversationId: Id<"conversations">) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const me = await ctx.db
+        .query("users")
+        .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))
+        .unique();
+
+    if (!me) throw new Error("User not found");
+
+    const conv = await ctx.db.get(conversationId);
+    if (!conv || !conv.isGroup) throw new Error("Group conversation not found");
+
+    if (!conv.adminIds?.includes(me._id)) {
+        throw new Error("You are not an admin of this group");
+    }
+
+    return { me, conv };
+};
+
+// Add member to group
+export const addGroupMember = mutation({
+    args: {
+        conversationId: v.id("conversations"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const { conv } = await validateAdmin(ctx, args.conversationId);
+
+        if (conv.participants.includes(args.userId)) {
+            throw new Error("User is already a member");
+        }
+
+        await ctx.db.patch(args.conversationId, {
+            participants: [...conv.participants, args.userId],
+        });
+    },
+});
+
+// Remove member from group
+export const removeGroupMember = mutation({
+    args: {
+        conversationId: v.id("conversations"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const { me, conv } = await validateAdmin(ctx, args.conversationId);
+
+        if (args.userId === me._id) {
+            throw new Error("Use leaveGroup instead of removing yourself");
+        }
+
+        const newParticipants = conv.participants.filter((id: Id<"users">) => id !== args.userId);
+        const newAdmins = (conv.adminIds || []).filter((id: Id<"users">) => id !== args.userId);
+
+        if (newParticipants.length < 2) {
+            throw new Error("Group must have at least 2 members");
+        }
+
+        await ctx.db.patch(args.conversationId, {
+            participants: newParticipants,
+            adminIds: newAdmins,
+        });
+    },
+});
+
+// Promote member to admin
+export const makeAdmin = mutation({
+    args: {
+        conversationId: v.id("conversations"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const { conv } = await validateAdmin(ctx, args.conversationId);
+
+        if (!conv.participants.includes(args.userId)) {
+            throw new Error("User must be a member to be an admin");
+        }
+
+        const admins = conv.adminIds || [];
+        if (admins.includes(args.userId)) return; // Already admin
+
+        await ctx.db.patch(args.conversationId, {
+            adminIds: [...admins, args.userId],
+        });
+    },
+});
+
+// Demote admin to member
+export const removeAdmin = mutation({
+    args: {
+        conversationId: v.id("conversations"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const { conv, me } = await validateAdmin(ctx, args.conversationId);
+
+        const admins = conv.adminIds || [];
+        if (!admins.includes(args.userId)) return; // Not an admin
+
+        if (admins.length === 1 && admins[0] === args.userId) {
+            throw new Error("Group must have at least one admin. Promote someone else first.");
+        }
+
+        await ctx.db.patch(args.conversationId, {
+            adminIds: admins.filter((id: Id<"users">) => id !== args.userId),
+        });
+    },
+});
+
+// Leave group (any member can do this)
+export const leaveGroup = mutation({
+    args: {
+        conversationId: v.id("conversations"),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const me = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (!me) throw new Error("User not found");
+
+        const conv = await ctx.db.get(args.conversationId);
+        if (!conv || !conv.isGroup) throw new Error("Group conversation not found");
+
+        if (!conv.participants.includes(me._id)) return; // Already left
+
+        const newParticipants = conv.participants.filter((id: Id<"users">) => id !== me._id);
+
+        // If they are the last member, we could theoretically delete the group.
+        // For now, let's just make it empty or let them leave.
+        if (newParticipants.length === 0) {
+            await ctx.db.patch(args.conversationId, {
+                participants: [],
+                adminIds: [],
+            });
+            return;
+        }
+
+        let newAdmins = (conv.adminIds || []).filter((id: Id<"users">) => id !== me._id);
+
+        // If the last admin left but there are still members, assign random admin
+        if (newAdmins.length === 0) {
+            newAdmins = [newParticipants[0]];
+        }
+
+        await ctx.db.patch(args.conversationId, {
+            participants: newParticipants,
+            adminIds: newAdmins,
         });
     },
 });

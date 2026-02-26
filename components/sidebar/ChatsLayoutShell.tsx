@@ -23,7 +23,7 @@ export function ChatsLayoutShell({
     }, [ensureUser]);
 
     return (
-        <div className="flex h-[100dvh] bg-[#0A0A0A] text-slate-100 overflow-hidden font-sans relative">
+        <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden font-sans relative">
 
             {/* 
         Mobile Hamburger Toggle (only visible on small screens when menu is closed) 
@@ -32,7 +32,7 @@ export function ChatsLayoutShell({
             {!mobileMenuOpen && (
                 <button
                     onClick={() => setMobileMenuOpen(true)}
-                    className="md:hidden absolute top-3 left-3 z-40 p-2.5 bg-[#111] border border-white/10 rounded-xl shadow-lg backdrop-blur text-white hover:bg-white/10 transition-colors"
+                    className="md:hidden absolute top-3 left-3 z-40 p-2.5 bg-card border border-border rounded-xl shadow-lg backdrop-blur text-foreground hover:bg-accent transition-colors"
                 >
                     <Menu className="w-5 h-5" />
                 </button>
@@ -46,7 +46,7 @@ export function ChatsLayoutShell({
             {/* 2. Secondary List Sidebar */}
             <div
                 className={cn(
-                    "h-full z-40 shrink-0 transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1) ease-out border-r border-white/5 bg-[#0B0B0B]",
+                    "h-full z-40 shrink-0 transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1) ease-out border-r border-border bg-background",
                     // Mobile state: positioned absolute, slide in/out
                     "absolute inset-y-0 left-0 shadow-2xl md:relative md:shadow-none",
                     mobileMenuOpen ? "translate-x-0 w-[280px]" : "-translate-x-full md:translate-x-0",
@@ -58,7 +58,7 @@ export function ChatsLayoutShell({
             </div>
 
             {/* 3. Main Chat Area */}
-            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#0A0A0A] relative z-0">
+            <div className="flex-1 flex flex-col h-full min-w-0 bg-background relative z-0">
                 {children}
             </div>
 
