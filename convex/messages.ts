@@ -7,6 +7,9 @@ export const send = mutation({
         conversationId: v.id("conversations"),
         content: v.string(),
         replyToId: v.optional(v.id("messages")),
+        fileId: v.optional(v.id("_storage")),
+        fileName: v.optional(v.string()),
+        fileType: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
@@ -25,6 +28,9 @@ export const send = mutation({
             content: args.content,
             isDeleted: false,
             ...(args.replyToId ? { replyToId: args.replyToId } : {}),
+            ...(args.fileId ? { fileId: args.fileId } : {}),
+            ...(args.fileName ? { fileName: args.fileName } : {}),
+            ...(args.fileType ? { fileType: args.fileType } : {}),
         });
 
         // Update conversation's last message for sidebar preview
@@ -86,7 +92,12 @@ export const list = query({
                     }
                 }
 
-                return { ...msg, sender, replyTo };
+                return {
+                    ...msg,
+                    sender,
+                    replyTo,
+                    fileUrl: msg.fileId ? await ctx.storage.getUrl(msg.fileId) : null,
+                };
             })
         );
 
@@ -311,3 +322,107 @@ export const sendBroadcast = mutation({
         return myConversations.length; // return count of conversations reached
     },
 });
+
+// Generate an upload URL for file attachments
+export const generateUploadUrl = mutation({
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+        return await ctx.storage.generateUploadUrl();
+    },
+});
+
+// Search messages within a conversation
+export const search = query({
+    args: {
+        conversationId: v.id("conversations"),
+        searchTerm: v.string(),
+    },
+    handler: async (ctx, args) => {
+        if (!args.searchTerm.trim()) return [];
+
+        const messages = await ctx.db
+            .query("messages")
+            .withIndex("by_conversation", (q) =>
+                q.eq("conversationId", args.conversationId)
+            )
+            .collect();
+
+        const term = args.searchTerm.toLowerCase();
+        const matches = messages.filter(
+            (m) => !m.isDeleted && m.content.toLowerCase().includes(term)
+        );
+
+        return await Promise.all(
+            matches.map(async (msg) => {
+                const sender = await ctx.db.get(msg.senderId);
+                return { ...msg, sender };
+            })
+        );
+    },
+});
+
+// Toggle pin on a message
+export const togglePin = mutation({
+    args: { messageId: v.id("messages") },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const message = await ctx.db.get(args.messageId);
+        if (!message) throw new Error("Message not found");
+
+        await ctx.db.patch(args.messageId, { isPinned: !message.isPinned });
+    },
+});
+
+// Get all pinned messages in a conversation
+export const getPinned = query({
+    args: { conversationId: v.id("conversations") },
+    handler: async (ctx, args) => {
+        const messages = await ctx.db
+            .query("messages")
+            .withIndex("by_conversation", (q) =>
+                q.eq("conversationId", args.conversationId)
+            )
+            .collect();
+
+        const pinned = messages.filter((m) => m.isPinned && !m.isDeleted);
+
+        return await Promise.all(
+            pinned.map(async (msg) => {
+                const sender = await ctx.db.get(msg.senderId);
+                return { ...msg, sender };
+            })
+        );
+    },
+});
+
+// Edit a message (sender only)
+export const editMessage = mutation({
+    args: {
+        messageId: v.id("messages"),
+        newContent: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        const message = await ctx.db.get(args.messageId);
+        if (!message) throw new Error("Message not found");
+        if (message.senderId !== user?._id) throw new Error("Not your message");
+        if (message.isDeleted) throw new Error("Cannot edit deleted message");
+
+        await ctx.db.patch(args.messageId, {
+            content: args.newContent.trim(),
+            editedAt: Date.now(),
+        });
+    },
+});
+
+

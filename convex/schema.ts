@@ -32,6 +32,11 @@ export default defineSchema({
         isDeleted: v.boolean(), // soft delete
         replyToId: v.optional(v.id("messages")), // reply to another message
         forwardedFrom: v.optional(v.string()), // original sender name if forwarded
+        fileId: v.optional(v.id("_storage")), // Convex file storage ID
+        fileName: v.optional(v.string()), // original file name
+        fileType: v.optional(v.string()), // MIME type (image/png, application/pdf, etc.)
+        isPinned: v.optional(v.boolean()), // pinned messages
+        editedAt: v.optional(v.number()), // timestamp when message was edited
         reactions: v.optional(
             v.array(
                 v.object({

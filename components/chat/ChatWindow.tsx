@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { CheckCircle2, Loader2, X } from "lucide-react";
+import { CheckCircle2, Loader2, X, Search } from "lucide-react";
 import { MessageInput } from "./MessageInput";
 import { MessageBubble } from "./MessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
@@ -30,9 +30,25 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
     const forwardMessage = useMutation(api.messages.forward);
 
     const bottomRef = useRef<HTMLDivElement>(null);
+    const prevMessageCountRef = useRef<number>(0);
     const [replyTo, setReplyTo] = useState<ReplyContext | null>(null);
     const [forwardingMsg, setForwardingMsg] = useState<{ _id: Id<"messages">; content: string } | null>(null);
     const [infoOpen, setInfoOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const searchResults = useQuery(
+        api.messages.search,
+        searchOpen && searchTerm.trim() ? { conversationId, searchTerm } : "skip"
+    );
+    const searchMatchIds = new Set(searchResults?.map(r => r._id) || []);
+
+    // Request notification permission on mount
+    useEffect(() => {
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }, []);
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -49,6 +65,25 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
             }).catch(() => { });
         }
     }, [messages, conversationId, markRead]);
+
+    // Desktop notification for new messages when tab is not focused
+    useEffect(() => {
+        if (!messages || !currentUser) return;
+
+        const prevCount = prevMessageCountRef.current;
+        prevMessageCountRef.current = messages.length;
+
+        if (prevCount > 0 && messages.length > prevCount && document.hidden) {
+            const latestMsg = messages[messages.length - 1];
+            if (latestMsg.senderId !== currentUser._id && Notification.permission === "granted") {
+                new Notification(latestMsg.sender?.name || "New message", {
+                    body: latestMsg.content || "Sent an attachment",
+                    icon: latestMsg.sender?.imageUrl || "/favicon.ico",
+                    tag: conversationId, // prevent duplicate notifications
+                });
+            }
+        }
+    }, [messages, currentUser, conversationId]);
 
     if (messages === undefined || allConvs === undefined || currentUser === undefined) {
         return (
@@ -114,8 +149,41 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
                         )}
                     </div>
                 </div>
+                <button
+                    onClick={() => { setSearchOpen(!searchOpen); setSearchTerm(""); }}
+                    className="p-1.5 rounded-lg hover:bg-white/20 text-blue-100 transition-colors z-10"
+                    title="Search messages"
+                >
+                    <Search className="w-4 h-4" />
+                </button>
                 <div className="absolute top-0 right-0 w-64 h-full bg-white/10 blur-2xl transform skew-x-12 translate-x-10 pointer-events-none" />
             </div>
+
+            {/* Search bar (collapsible) */}
+            {searchOpen && (
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card/50 backdrop-blur-sm shrink-0 animate-fade-in">
+                    <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search in conversation..."
+                        className="flex-1 bg-transparent border-none text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                        autoFocus
+                    />
+                    {searchTerm && (
+                        <span className="text-xs text-muted-foreground shrink-0">
+                            {searchMatchIds.size} result{searchMatchIds.size !== 1 ? "s" : ""}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => { setSearchOpen(false); setSearchTerm(""); }}
+                        className="p-1 text-muted-foreground hover:text-foreground"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
 
             {/* Main message area */}
             <div className="flex-1 overflow-y-auto relative bg-background px-6 py-6 flex flex-col gap-6">
@@ -132,6 +200,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
                                 key={message._id}
                                 message={message as any}
                                 isMe={isMe}
+                                highlight={searchMatchIds.has(message._id)}
                                 onReply={(msg) => setReplyTo(msg)}
                                 onForward={(msg) => setForwardingMsg(msg)}
                             />

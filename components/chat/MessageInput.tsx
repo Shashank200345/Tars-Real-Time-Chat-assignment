@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Send, Smile, X, Reply } from "lucide-react";
+import { Send, Smile, X, Reply, Paperclip, Image, FileText, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 
@@ -28,12 +28,16 @@ export function MessageInput({
     const [content, setContent] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
     const sendMessage = useMutation(api.messages.send);
+    const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
     const setTyping = useMutation(api.typing.setTyping);
     const clearTyping = useMutation(api.typing.clearTyping);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { theme } = useTheme();
 
     // Focus input when replying
@@ -55,7 +59,7 @@ export function MessageInput({
     }, []);
 
     const handleSend = async () => {
-        if (!content.trim() || isSending) return;
+        if ((!content.trim() && !selectedFile) || isSending) return;
 
         const messageContent = content.trim();
         setContent("");
@@ -68,18 +72,39 @@ export function MessageInput({
         }
 
         try {
+            let fileId: any = undefined;
+            let fileName: string | undefined = undefined;
+            let fileType: string | undefined = undefined;
+
+            if (selectedFile) {
+                const uploadUrl = await generateUploadUrl();
+                const result = await fetch(uploadUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": selectedFile.type },
+                    body: selectedFile,
+                });
+                const { storageId } = await result.json();
+                fileId = storageId;
+                fileName = selectedFile.name;
+                fileType = selectedFile.type;
+            }
+
             await sendMessage({
                 conversationId,
-                content: messageContent,
+                content: messageContent || (fileName ? `📎 ${fileName}` : ""),
                 ...(replyTo ? { replyToId: replyTo._id } : {}),
+                ...(fileId ? { fileId, fileName, fileType } : {}),
             });
-            onCancelReply?.(); // Clear reply context after sending
+            onCancelReply?.();
+            clearFileSelection();
         } catch (error) {
             console.error("Failed to send message:", error);
         } finally {
             setIsSending(false);
         }
     };
+
+
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -120,8 +145,49 @@ export function MessageInput({
         inputRef.current?.focus();
     };
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setSelectedFile(file);
+        if (file.type.startsWith("image/")) {
+            setFilePreviewUrl(URL.createObjectURL(file));
+        } else {
+            setFilePreviewUrl(null);
+        }
+        inputRef.current?.focus();
+    };
+
+    const clearFileSelection = () => {
+        setSelectedFile(null);
+        if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+        setFilePreviewUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const isImage = (type?: string) => type?.startsWith("image/");
+
     return (
         <div className="bg-background pt-2 pb-6 px-6 shrink-0 relative mt-auto z-10">
+            {/* File preview bar */}
+            {selectedFile && (
+                <div className="flex items-center gap-3 mb-2 bg-secondary/50 border border-border rounded-xl px-4 py-2.5 animate-fade-in">
+                    {filePreviewUrl ? (
+                        <img src={filePreviewUrl} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-border" />
+                    ) : (
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-primary" />
+                        </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{selectedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                    </div>
+                    <button onClick={clearFileSelection} className="text-muted-foreground hover:text-foreground p-1 shrink-0">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
             {/* Reply context bar */}
             {replyTo && (
                 <div className="flex items-center gap-3 mb-2 bg-secondary/50 border border-border rounded-xl px-4 py-2.5 animate-fade-in">
@@ -168,6 +234,21 @@ export function MessageInput({
                 </button>
 
                 <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+                />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                    title="Attach file"
+                >
+                    <Paperclip className="w-5 h-5" />
+                </button>
+
+                <input
                     ref={inputRef}
                     type="text"
                     value={content}
@@ -180,10 +261,10 @@ export function MessageInput({
 
                 <button
                     onClick={handleSend}
-                    disabled={!content.trim() || isSending}
+                    disabled={(!content.trim() && !selectedFile) || isSending}
                     className="p-2 m-1 bg-primary hover:bg-primary/90 disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors flex items-center justify-center"
                 >
-                    <Send className="w-4 h-4" />
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
             </div>
         </div>

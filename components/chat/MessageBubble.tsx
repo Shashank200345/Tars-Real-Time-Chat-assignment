@@ -8,7 +8,7 @@ import { UserAvatar } from "../UserAvatar";
 import { formatMessageTime } from "@/utils/formatTime";
 import { getAnimatedEmojiUrl, splitEmojis } from "@/utils/animatedEmoji";
 import { cn } from "@/lib/utils";
-import { Trash2, Reply, Forward, Copy, Check } from "lucide-react";
+import { Trash2, Reply, Forward, Copy, Check, Download, FileText, Pin, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "🎉", "🔥"];
@@ -28,6 +28,11 @@ interface MessageProps {
     forwardedFrom?: string;
     replyTo?: ReplyTo | null;
     reactions?: { emoji: string; userId: Id<"users"> }[];
+    fileUrl?: string | null;
+    fileName?: string;
+    fileType?: string;
+    isPinned?: boolean;
+    editedAt?: number;
     sender?: {
         _id: Id<"users">;
         name: string;
@@ -38,11 +43,13 @@ interface MessageProps {
 export function MessageBubble({
     message,
     isMe,
+    highlight,
     onReply,
     onForward,
 }: {
     message: MessageProps;
     isMe: boolean;
+    highlight?: boolean;
     onReply?: (msg: { _id: Id<"messages">; content: string; senderName: string }) => void;
     onForward?: (msg: { _id: Id<"messages">; content: string }) => void;
 }) {
@@ -50,6 +57,10 @@ export function MessageBubble({
     const [copied, setCopied] = useState(false);
     const addReaction = useMutation(api.messages.addReaction);
     const softDelete = useMutation(api.messages.softDelete);
+    const togglePin = useMutation(api.messages.togglePin);
+    const editMessage = useMutation(api.messages.editMessage);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState(message.content);
 
     const time = formatMessageTime(message._creationTime);
 
@@ -101,7 +112,7 @@ export function MessageBubble({
 
     return (
         <div
-            className={cn("flex gap-3 max-w-[85%] group", isMe ? "self-end flex-row-reverse" : "self-start")}
+            className={cn("flex gap-3 max-w-[85%] group transition-all", isMe ? "self-end flex-row-reverse" : "self-start", highlight && "ring-2 ring-yellow-400/70 rounded-2xl bg-yellow-400/5 px-1 py-0.5")}
             onMouseEnter={() => setShowActions(true)}
             onMouseLeave={() => setShowActions(false)}
         >
@@ -114,6 +125,13 @@ export function MessageBubble({
             )}
 
             <div className={cn("flex flex-col gap-1 min-w-0 relative", isMe ? "items-end" : "items-start")}>
+                {/* Pinned indicator */}
+                {message.isPinned && (
+                    <div className="flex items-center gap-1 text-[10px] text-amber-500">
+                        <Pin className="w-3 h-3" />
+                        <span>Pinned</span>
+                    </div>
+                )}
                 {!isMe && message.sender && (
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-foreground">{message.sender.name}</span>
@@ -175,7 +193,85 @@ export function MessageBubble({
                                     : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm"
                             )}
                         >
-                            {message.content}
+                            {/* Image/File attachment */}
+                            {message.fileUrl && message.fileType?.startsWith("image/") && (
+                                <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                                    <img
+                                        src={message.fileUrl}
+                                        alt={message.fileName || "Image"}
+                                        className="max-w-full max-h-72 rounded-xl object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                    />
+                                </a>
+                            )}
+                            {message.fileUrl && !message.fileType?.startsWith("image/") && (
+                                <a
+                                    href={message.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={cn(
+                                        "flex items-center gap-3 p-3 rounded-xl mb-2 transition-colors",
+                                        isMe ? "bg-white/10 hover:bg-white/20" : "bg-secondary hover:bg-secondary/80"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                                        isMe ? "bg-white/20" : "bg-primary/10"
+                                    )}>
+                                        <FileText className={cn("w-5 h-5", isMe ? "text-white" : "text-primary")} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{message.fileName || "File"}</p>
+                                        <p className={cn("text-[10px]", isMe ? "text-white/60" : "text-muted-foreground")}>
+                                            Click to download
+                                        </p>
+                                    </div>
+                                    <Download className={cn("w-4 h-4 shrink-0", isMe ? "text-white/60" : "text-muted-foreground")} />
+                                </a>
+                            )}
+                            {/* Text content or Edit mode */}
+                            {isEditing ? (
+                                <div className="flex flex-col gap-1.5 w-full min-w-[200px]">
+                                    <input
+                                        type="text"
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                editMessage({ messageId: message._id, newContent: editContent });
+                                                setIsEditing(false);
+                                            }
+                                            if (e.key === "Escape") setIsEditing(false);
+                                        }}
+                                        className="bg-transparent border border-white/20 rounded-lg px-2 py-1 text-[13px] outline-none focus:border-white/40"
+                                        autoFocus
+                                    />
+                                    <div className="flex gap-1 text-[10px]">
+                                        <button
+                                            onClick={() => { editMessage({ messageId: message._id, newContent: editContent }); setIsEditing(false); }}
+                                            className="px-2 py-0.5 bg-white/20 rounded hover:bg-white/30 transition-colors"
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditing(false)}
+                                            className="px-2 py-0.5 rounded hover:bg-white/10 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    {message.content && !(message.fileUrl && message.content.startsWith("\ud83d\udcce")) && (
+                                        <span>{message.content}</span>
+                                    )}
+                                    {message.editedAt && (
+                                        <span className={cn("text-[10px] italic ml-1", isMe ? "text-white/50" : "text-muted-foreground")}>
+                                            (edited)
+                                        </span>
+                                    )}
+                                </>
+                            )}
                         </div>
                     )}
 
@@ -219,6 +315,25 @@ export function MessageBubble({
                             >
                                 {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
+                            <button
+                                onClick={() => togglePin({ messageId: message._id })}
+                                className={cn(
+                                    "hover:bg-accent rounded p-1.5 transition-colors",
+                                    message.isPinned ? "text-amber-500" : "text-muted-foreground hover:text-amber-500"
+                                )}
+                                title={message.isPinned ? "Unpin message" : "Pin message"}
+                            >
+                                <Pin className="w-3.5 h-3.5" />
+                            </button>
+                            {isMe && !message.isDeleted && (
+                                <button
+                                    onClick={() => { setIsEditing(true); setEditContent(message.content); setShowActions(false); }}
+                                    className="hover:bg-accent text-muted-foreground hover:text-blue-500 rounded p-1.5 transition-colors"
+                                    title="Edit message"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                            )}
                             {isMe && (
                                 <button
                                     onClick={() => softDelete({ messageId: message._id })}

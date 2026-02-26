@@ -1,0 +1,21 @@
+{
+    "name": "Calley Chat",
+    "short_name": "Calley",
+    "description": "Real-time chat application built with Next.js, Convex, and Clerk",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0a",
+    "theme_color": "#2563eb",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "64x64",
+            "type": "image/x-icon"
+        }
+    ],
+    "categories": [
+        "communication",
+        "social"
+    ]
+}
