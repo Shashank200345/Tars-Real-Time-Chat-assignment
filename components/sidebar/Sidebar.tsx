@@ -143,7 +143,7 @@ export function Sidebar({
                 {/* User Profile Info */}
                 <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-xl bg-card border border-border">
                     <UserButton
-                        afterSignOutUrl="/sign-in"
+                        afterSignOutUrl="/"
                         appearance={{
                             elements: { userButtonAvatarBox: "w-8 h-8" },
                         }}

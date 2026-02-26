@@ -124,7 +124,7 @@ export function PrimarySidebar() {
                     {/* Bottom Profile */}
                     <div className="mt-auto mb-2 flex items-center justify-center w-full">
                         <UserButton
-                            afterSignOutUrl="/sign-in"
+                            afterSignOutUrl="/"
                             appearance={{
                                 elements: { userButtonAvatarBox: "w-10 h-10 hover:ring-2 hover:ring-white/20 transition-all" },
                             }}
