@@ -22,11 +22,13 @@ interface ConvProps {
     unreadCount?: number;
 }
 
-export function ConversationItem({ conversation }: { conversation: ConvProps }) {
+export function ConversationItem({ conversation, currentUserId }: { conversation: ConvProps, currentUserId?: string }) {
     const params = useParams();
     const isActive = params.id === conversation._id;
 
-    const otherUser = conversation.participants.find(p => p._id !== params.id) || conversation.participants[0];
+    const otherUser = currentUserId
+        ? conversation.participants.find(p => p._id !== currentUserId) || conversation.participants[0]
+        : conversation.participants[0];
 
     if (!conversation.isGroup && !otherUser) return null;
 

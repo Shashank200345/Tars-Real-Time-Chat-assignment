@@ -29,6 +29,7 @@ export function Sidebar({
     onCloseMobile?: () => void
 }) {
     const router = useRouter();
+    const currentUser = useQuery(api.users.getMe);
     const conversations = useQuery(api.conversations.listForMe);
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -128,7 +129,7 @@ export function Sidebar({
                                 </div>
                             ) : (
                                 conversations.map((conv) => (
-                                    <ConversationItem key={conv._id} conversation={conv as any} />
+                                    <ConversationItem key={conv._id} conversation={conv as any} currentUserId={currentUser?._id} />
                                 ))
                             )}
                         </div>
