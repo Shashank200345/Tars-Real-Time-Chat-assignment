@@ -9,6 +9,7 @@ import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
+import { Theme as EmojiTheme } from "emoji-picker-react";
 
 interface ReplyContext {
     _id: Id<"messages">;
@@ -215,7 +216,7 @@ export function MessageInput({
                         onEmojiClick={onEmojiClick}
                         width={350}
                         height={400}
-                        theme={theme === "dark" ? "dark" : "light"}
+                        theme={theme === "dark" ? EmojiTheme.DARK : EmojiTheme.LIGHT}
                         searchPlaceholder="Search emojis..."
                         skinTonesDisabled
                         previewConfig={{ showPreview: false }}
