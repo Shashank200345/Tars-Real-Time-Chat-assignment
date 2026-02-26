@@ -315,3 +315,114 @@ export const leaveGroup = mutation({
         });
     },
 });
+
+// Generate an invite link for a group
+export const generateInvite = mutation({
+    args: {
+        conversationId: v.id("conversations"),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const me = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (!me) throw new Error("User not found");
+
+        const conv = await ctx.db.get(args.conversationId);
+        if (!conv || !conv.isGroup) throw new Error("Group conversation not found");
+
+        if (!conv.participants.includes(me._id)) {
+            throw new Error("You must be a member to generate an invite link");
+        }
+
+        if (conv.inviteToken) {
+            return conv.inviteToken;
+        }
+
+        // Generate a random token
+        const inviteToken = crypto.randomUUID().replace(/-/g, "");
+
+        await ctx.db.patch(args.conversationId, { inviteToken });
+
+        return inviteToken;
+    },
+});
+
+// Get basic conversation details via an invite link (publicly accessible)
+export const getConversationByInvite = query({
+    args: { inviteToken: v.string() },
+    handler: async (ctx, args) => {
+        const conv = await ctx.db
+            .query("conversations")
+            .withIndex("by_invite_token", (q) => q.eq("inviteToken", args.inviteToken))
+            .unique();
+
+        if (!conv) {
+            throw new Error("Invalid or expired invite link");
+        }
+
+        let isMember = false;
+
+        // Check if user is logged in to see if they are a member
+        const identity = await ctx.auth.getUserIdentity();
+        if (identity) {
+            const me = await ctx.db
+                .query("users")
+                .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+                .unique();
+            if (me && conv.participants.includes(me._id)) {
+                isMember = true;
+            }
+        }
+
+        return {
+            _id: conv._id,
+            groupName: conv.groupName || "Group Chat",
+            participantCount: conv.participants.length,
+            isGroup: conv.isGroup,
+            isMember
+        };
+    },
+});
+
+// Join a group via an invite token
+export const joinByInvite = mutation({
+    args: { inviteToken: v.string() },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const me = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .unique();
+
+        if (!me) throw new Error("User not found");
+
+        const conv = await ctx.db
+            .query("conversations")
+            .withIndex("by_invite_token", (q) => q.eq("inviteToken", args.inviteToken))
+            .unique();
+
+        if (!conv) {
+            throw new Error("Invalid or expired invite link");
+        }
+
+        if (!conv.isGroup) {
+            throw new Error("Invite link must be for a group");
+        }
+
+        if (conv.participants.includes(me._id)) {
+            return conv._id; // Already a member
+        }
+
+        const newParticipants = [...conv.participants, me._id];
+        await ctx.db.patch(conv._id, { participants: newParticipants });
+
+        return conv._id;
+    },
+});

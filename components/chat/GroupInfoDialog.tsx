@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "../UserAvatar";
 import { toast } from "sonner";
-import { Loader2, Users, Search, UserPlus, Shield, ShieldAlert, X, LogOut, CheckCircle2 } from "lucide-react";
+import { Loader2, Users, Search, UserPlus, Shield, ShieldAlert, X, LogOut, Link } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -40,6 +40,7 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
     const makeAdmin = useMutation(api.conversations.makeAdmin);
     const removeAdmin = useMutation(api.conversations.removeAdmin);
     const leaveGroup = useMutation(api.conversations.leaveGroup);
+    const generateInvite = useMutation(api.conversations.generateInvite);
 
     const [isAddingMode, setIsAddingMode] = useState(false);
     const [search, setSearch] = useState("");
@@ -123,14 +124,28 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
         }
     };
 
+    const handleCopyInvite = async () => {
+        setIsProcessing("invite");
+        try {
+            const token = await generateInvite({ conversationId });
+            const inviteUrl = `${window.location.origin}/invite/${token}`;
+            await navigator.clipboard.writeText(inviteUrl);
+            toast.success("Invite link copied to clipboard");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to generate invite link");
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={(val) => {
             if (!val) setIsAddingMode(false);
             onOpenChange(val);
         }}>
-            <DialogContent className="sm:max-w-md bg-[#111] border border-white/10 text-slate-100 p-0 shadow-2xl overflow-hidden">
-                <DialogHeader className="p-4 border-b border-white/5 bg-[#0B0B0B]">
-                    <DialogTitle className="text-lg font-semibold flex items-center justify-between text-white pr-6">
+            <DialogContent className="sm:max-w-md bg-card border border-border text-card-foreground p-0 shadow-2xl overflow-hidden">
+                <DialogHeader className="p-4 border-b border-border bg-background">
+                    <DialogTitle className="text-lg font-semibold flex items-center justify-between text-foreground pr-6">
                         <div className="flex items-center gap-2">
                             <Users className="w-5 h-5 text-indigo-500" />
                             {conversation.groupName}
@@ -140,7 +155,7 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsAddingMode(true)}
-                                className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 h-8 px-2"
+                                className="text-primary hover:text-primary/90 hover:bg-primary/10 h-8 px-2"
                             >
                                 <UserPlus className="w-4 h-4 mr-1" />
                                 Add
@@ -151,7 +166,7 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsAddingMode(false)}
-                                className="text-slate-400 hover:text-white hover:bg-white/10 h-8 px-2"
+                                className="text-muted-foreground hover:text-foreground hover:bg-accent h-8 px-2"
                             >
                                 Back
                             </Button>
@@ -161,11 +176,23 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
 
                 {!isAddingMode ? (
                     <>
-                        <div className="p-4 bg-white/5 border-b border-white/5">
-                            <p className="text-sm text-slate-400 mb-1">Group Details</p>
-                            <p className="text-xs text-slate-500">{participants.length} members</p>
+                        <div className="p-4 bg-secondary/50 border-b border-border flex justify-between items-center">
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-1">Group Details</p>
+                                <p className="text-xs text-muted-foreground">{participants.length} members</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCopyInvite}
+                                disabled={!!isProcessing}
+                                className="h-8 gap-2 bg-background border-border"
+                            >
+                                {isProcessing === "invite" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link className="w-4 h-4" />}
+                                Copy Link
+                            </Button>
                         </div>
-                        <ScrollArea className="max-h-[300px] bg-[#0A0A0A]">
+                        <ScrollArea className="max-h-[300px] bg-background">
                             <div className="p-2 space-y-1">
                                 {participants.map((user) => {
                                     if (!user) return null;
@@ -173,19 +200,19 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
                                     const isMe = user._id === currentUser._id;
 
                                     return (
-                                        <div key={user._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 group border border-transparent transition-all">
+                                        <div key={user._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-accent group border border-transparent transition-all">
                                             <div className="flex items-center gap-3">
-                                                <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-9 w-9 border border-white/10" />
+                                                <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-9 w-9 border border-border" />
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-slate-200 text-sm flex items-center gap-2">
+                                                    <span className="font-medium text-foreground text-sm flex items-center gap-2">
                                                         {isMe ? "You" : user.name}
                                                         {isUserAdmin && (
-                                                            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                                                            <span className="text-[10px] uppercase font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                                                                 Admin
                                                             </span>
                                                         )}
                                                     </span>
-                                                    <span className="text-xs text-slate-500">{user.email}</span>
+                                                    <span className="text-xs text-muted-foreground">{user.email}</span>
                                                 </div>
                                             </div>
 
@@ -218,7 +245,7 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                                         onClick={() => handleRemoveMember(user._id)}
                                                         disabled={!!isProcessing}
                                                         title="Remove Member"
@@ -232,10 +259,10 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
                                 })}
                             </div>
                         </ScrollArea>
-                        <div className="p-4 border-t border-white/5 bg-[#0B0B0B]">
+                        <div className="p-4 border-t border-border bg-background">
                             <Button
                                 variant="ghost"
-                                className="w-full text-red-500 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center gap-2"
+                                className="w-full text-destructive hover:text-destructive/90 hover:bg-destructive/10 flex items-center justify-center gap-2"
                                 onClick={handleLeaveGroup}
                                 disabled={!!isProcessing}
                             >
@@ -246,36 +273,36 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
                     </>
                 ) : (
                     <>
-                        <div className="p-4 border-b border-white/5">
+                        <div className="p-4 border-b border-border">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search users to add..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-9 bg-[#1A1A1A] border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                                    className="pl-9 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
                                 />
                             </div>
                         </div>
-                        <ScrollArea className="max-h-[300px] min-h-[200px] bg-[#0A0A0A]">
+                        <ScrollArea className="max-h-[300px] min-h-[200px] bg-background">
                             {filteredUsers.length === 0 ? (
-                                <div className="text-center py-8 text-slate-500 text-sm">
+                                <div className="text-center py-8 text-muted-foreground text-sm">
                                     No users found...
                                 </div>
                             ) : (
                                 <div className="p-2 space-y-1">
                                     {filteredUsers.map((user) => (
-                                        <div key={user._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 border border-transparent transition-all">
+                                        <div key={user._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-accent border border-transparent transition-all">
                                             <div className="flex items-center gap-3">
-                                                <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-9 w-9 border border-white/10" />
-                                                <span className="font-medium text-slate-200 text-sm">
+                                                <UserAvatar name={user.name} imageUrl={user.imageUrl} className="h-9 w-9 border border-border" />
+                                                <span className="font-medium text-foreground text-sm">
                                                     {user.name}
                                                 </span>
                                             </div>
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                                                className="text-primary hover:text-primary/90 hover:bg-primary/10"
                                                 onClick={() => handleAddMember(user._id)}
                                                 disabled={!!isProcessing}
                                             >

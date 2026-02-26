@@ -18,9 +18,12 @@ export default defineSchema({
         isGroup: v.boolean(),
         groupName: v.optional(v.string()),
         adminIds: v.optional(v.array(v.id("users"))), // Array of group admins
+        inviteToken: v.optional(v.string()), // For group invite links
         lastMessageId: v.optional(v.id("messages")),
         lastMessageTime: v.optional(v.number()),
-    }).index("by_last_message_time", ["lastMessageTime"]),
+    })
+        .index("by_last_message_time", ["lastMessageTime"])
+        .index("by_invite_token", ["inviteToken"]),
 
     messages: defineTable({
         conversationId: v.id("conversations"),

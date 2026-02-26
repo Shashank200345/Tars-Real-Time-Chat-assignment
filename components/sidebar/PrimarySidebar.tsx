@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { MessageSquare, LayoutDashboard, RadioTower, Plus } from "lucide-react";
+import { MessageSquare, LayoutDashboard, RadioTower, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -21,6 +21,7 @@ export function PrimarySidebar() {
     const [groupOpen, setGroupOpen] = useState(false);
 
     const isChatsActive = pathname.startsWith("/chats");
+    const isContactsActive = pathname.startsWith("/contacts");
 
     return (
         <>
@@ -60,6 +61,29 @@ export function PrimarySidebar() {
                             </TooltipTrigger>
                             <TooltipContent side="right" sideOffset={10} className="font-semibold">
                                 Chats
+                            </TooltipContent>
+                        </Tooltip>
+
+                        {/* Contacts Link */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link href="/contacts" className="relative group w-full flex justify-center">
+                                    <div className={cn(
+                                        "absolute left-0 top-1/2 -translate-y-1/2 w-1 bg-white rounded-r-md transition-all duration-300",
+                                        isContactsActive ? "h-8" : "h-0 group-hover:h-5 opacity-50"
+                                    )} />
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-[24px] flex items-center justify-center transition-all duration-300 overflow-hidden",
+                                        isContactsActive
+                                            ? "bg-primary text-primary-foreground rounded-[16px]"
+                                            : "bg-secondary hover:bg-primary hover:text-primary-foreground hover:rounded-[16px] text-muted-foreground"
+                                    )}>
+                                        <Users className="w-6 h-6 stroke-[1.5]" />
+                                    </div>
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" sideOffset={10} className="font-semibold">
+                                Contacts
                             </TooltipContent>
                         </Tooltip>
 
