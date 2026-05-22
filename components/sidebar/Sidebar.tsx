@@ -4,9 +4,9 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { UserSearch } from "./UserSearch";
 import { ConversationItem } from "./ConversationItem";
-import { Loader2, MessageSquare, Users, Settings, Moon, Sun, ChevronRight, Menu } from "lucide-react";
+import { Loader2, MessageSquare, Users, Settings, Moon, Sun, Menu } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -18,11 +18,6 @@ const topNavCategories = [
     { name: "Contacts", icon: Users, active: false },
 ];
 
-const bottomNavCategories = [
-    { name: "Settings", icon: Settings },
-    { name: "Dark Mode", icon: Moon },
-];
-
 export function Sidebar({
     onCloseMobile
 }: {
@@ -32,12 +27,11 @@ export function Sidebar({
     const currentUser = useQuery(api.users.getMe);
     const conversations = useQuery(api.conversations.listForMe);
     const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    // Prevent hydration mismatch
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
 
     const handleBottomNavClick = (name: string) => {
         if (name === "Settings") {
@@ -129,7 +123,7 @@ export function Sidebar({
                                 </div>
                             ) : (
                                 conversations.map((conv) => (
-                                    <ConversationItem key={conv._id} conversation={conv as any} currentUserId={currentUser?._id} />
+                                    <ConversationItem key={conv._id} conversation={conv} currentUserId={currentUser?._id} />
                                 ))
                             )}
                         </div>

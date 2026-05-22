@@ -1,0 +1,18 @@
+# docker-compose.yml — for LOCAL testing only, not used in CI/CD
+# Usage: docker compose up --build
+
+version: "3.9"
+
+services:
+  tars-chat:
+    build:
+      context: .
+      args:
+        # These are read from your local .env.local file
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_CONVEX_URL: ${NEXT_PUBLIC_CONVEX_URL}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local     # runtime secrets injected here (CLERK_SECRET_KEY etc.)
+    restart: unless-stopped

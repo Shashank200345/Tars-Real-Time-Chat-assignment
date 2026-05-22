@@ -16,13 +16,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "../UserAvatar";
 import { toast } from "sonner";
 import { Loader2, Users, Search, UserPlus, Shield, ShieldAlert, X, LogOut, Link } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface GroupInfoDialogProps {
     conversationId: Id<"conversations">;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+    return error instanceof Error ? error.message : fallback;
 }
 
 export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInfoDialogProps) {
@@ -65,8 +68,8 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
             await addMember({ conversationId, userId });
             toast.success("Member added");
             setSearch(""); // Reset search
-        } catch (error: any) {
-            toast.error(error.message || "Failed to add member");
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, "Failed to add member"));
         } finally {
             setIsProcessing(null);
         }
@@ -78,8 +81,8 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
         try {
             await removeMember({ conversationId, userId });
             toast.success("Member removed");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to remove member");
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, "Failed to remove member"));
         } finally {
             setIsProcessing(null);
         }
@@ -90,8 +93,8 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
         try {
             await makeAdmin({ conversationId, userId });
             toast.success("Promoted to admin");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to make admin");
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, "Failed to make admin"));
         } finally {
             setIsProcessing(null);
         }
@@ -102,8 +105,8 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
         try {
             await removeAdmin({ conversationId, userId });
             toast.success("Admin role removed");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to remove admin");
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, "Failed to remove admin"));
         } finally {
             setIsProcessing(null);
         }
@@ -117,8 +120,8 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
             toast.success("You left the group");
             onOpenChange(false);
             router.push("/"); // Redirect to home
-        } catch (error: any) {
-            toast.error(error.message || "Failed to leave group");
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, "Failed to leave group"));
         } finally {
             setIsProcessing(null);
         }
@@ -131,8 +134,8 @@ export function GroupInfoDialog({ conversationId, open, onOpenChange }: GroupInf
             const inviteUrl = `${window.location.origin}/invite/${token}`;
             await navigator.clipboard.writeText(inviteUrl);
             toast.success("Invite link copied to clipboard");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to generate invite link");
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, "Failed to generate invite link"));
         } finally {
             setIsProcessing(null);
         }

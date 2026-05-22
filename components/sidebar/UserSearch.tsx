@@ -33,10 +33,10 @@ export function UserSearch() {
     const startChat = async (userId: string) => {
         setIsCreating(userId);
         try {
-            const conversationId = await getOrCreateDM({ otherUserId: userId as any });
+            const conversationId = await getOrCreateDM({ otherUserId: userId });
             setOpen(false);
             router.push(`/chats/${conversationId}`);
-        } catch (error) {
+        } catch {
             toast.error("Failed to create conversation");
         } finally {
             setIsCreating(null);
@@ -78,7 +78,7 @@ export function UserSearch() {
                         </div>
                     ) : filteredUsers?.length === 0 ? (
                         <div className="text-center py-8 text-slate-500 text-sm">
-                            No users found matching "{search}"
+                            No users found matching &quot;{search}&quot;
                         </div>
                     ) : (
                         <div className="p-2 space-y-1">
