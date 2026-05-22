@@ -38,22 +38,4 @@ jobs:
             export DEPLOY_SHA=${{ steps.sha.outputs.sha }}
             bash /opt/tars/deploy.sh "$DEPLOY_SHA"
 
-      # Notify your team on success (optional but professional)
-      - name: Notify Slack on success
-        if: success()
-        run: |
-          curl -s -X POST ${{ secrets.SLACK_WEBHOOK }} \
-            -H 'Content-type: application/json' \
-            -d '{
-              "text": "✅ Tars Chat deployed successfully!\nSHA: `${{ steps.sha.outputs.sha }}`\nCommit: ${{ github.event.workflow_run.head_commit.message }}"
-            }'
-
-      # Notify on failure too
-      - name: Notify Slack on failure
-        if: failure()
-        run: |
-          curl -s -X POST ${{ secrets.SLACK_WEBHOOK }} \
-            -H 'Content-type: application/json' \
-            -d '{
-              "text": "❌ Tars Chat deployment FAILED — rollback triggered.\nSHA: `${{ steps.sha.outputs.sha }}`"
-            }'
+     
