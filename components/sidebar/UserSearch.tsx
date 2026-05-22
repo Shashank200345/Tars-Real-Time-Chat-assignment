@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Plus } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import {
     Dialog,
@@ -24,13 +25,13 @@ export function UserSearch() {
 
     const users = useQuery(api.users.listAll);
     const getOrCreateDM = useMutation(api.conversations.getOrCreateDM);
-    const [isCreating, setIsCreating] = useState<string | null>(null);
+    const [isCreating, setIsCreating] = useState<Id<"users"> | null>(null);
 
     const filteredUsers = users?.filter((u) =>
         u.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    const startChat = async (userId: string) => {
+    const startChat = async (userId: Id<"users">) => {
         setIsCreating(userId);
         try {
             const conversationId = await getOrCreateDM({ otherUserId: userId });

@@ -101,7 +101,9 @@ export const listForMe = query({
 
                 return {
                     ...conv,
-                    participants: participants.filter(Boolean),
+                    participants: participants.filter(
+                        (p): p is NonNullable<typeof p> => p !== null
+                    ),
                     lastMessage,
                     unreadCount,
                 };

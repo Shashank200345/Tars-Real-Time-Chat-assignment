@@ -4,24 +4,25 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { UserAvatar } from "../UserAvatar";
 import { cn } from "@/lib/utils";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface ConvProps {
-    _id: string;
+    _id: Id<"conversations">;
     isGroup: boolean;
     groupName?: string;
     participants: Array<{
-        _id: string;
+        _id: Id<"users">;
         name: string;
         imageUrl: string;
         isOnline: boolean;
         clerkId: string;
     }>;
-    lastMessage: { content: string; senderId: string } | null;
+    lastMessage: { content: string; senderId: Id<"users"> } | null;
     lastMessageTime?: number;
     unreadCount?: number;
 }
 
-export function ConversationItem({ conversation, currentUserId }: { conversation: ConvProps, currentUserId?: string }) {
+export function ConversationItem({ conversation, currentUserId }: { conversation: ConvProps, currentUserId?: Id<"users"> }) {
     const params = useParams();
     const isActive = params.id === conversation._id;
 

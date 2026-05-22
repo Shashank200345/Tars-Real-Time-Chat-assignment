@@ -38,7 +38,7 @@ interface MessageProps {
         _id: Id<"users">;
         name: string;
         imageUrl: string;
-    };
+    } | null;
 }
 
 export function MessageBubble({
