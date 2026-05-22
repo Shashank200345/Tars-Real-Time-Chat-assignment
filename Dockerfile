@@ -1,5 +1,5 @@
 # ─── Stage 1: Install dependencies ───────────────────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:20-alpine3.19 AS deps
 
 # libc6-compat is needed for some native npm packages on alpine
 RUN apk add --no-cache libc6-compat
