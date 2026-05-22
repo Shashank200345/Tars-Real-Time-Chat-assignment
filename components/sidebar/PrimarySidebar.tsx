@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { MessageSquare, LayoutDashboard, RadioTower, Plus, Users } from "lucide-react";
+import { MessageSquare, RadioTower, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import {

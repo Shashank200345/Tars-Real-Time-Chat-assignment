@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { UserAvatar } from "../UserAvatar";
-import { formatMessageTime } from "@/utils/formatTime";
 import { cn } from "@/lib/utils";
 
 interface ConvProps {

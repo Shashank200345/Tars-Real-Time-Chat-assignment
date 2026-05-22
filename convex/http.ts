@@ -5,6 +5,17 @@ import { Webhook } from "svix";
 
 const http = httpRouter();
 
+interface ClerkUserWebhookEvent {
+    type: string;
+    data: {
+        id: string;
+        first_name?: string | null;
+        last_name?: string | null;
+        email_addresses?: Array<{ email_address: string }>;
+        image_url?: string | null;
+    };
+}
+
 http.route({
     path: "/clerk-webhook",
     method: "POST",
@@ -21,14 +32,14 @@ http.route({
 
         // Verify the webhook signature
         const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
-        let event: any;
+        let event: ClerkUserWebhookEvent;
 
         try {
             event = wh.verify(body, {
                 "svix-id": svixId,
                 "svix-timestamp": svixTimestamp,
                 "svix-signature": svixSignature,
-            });
+            }) as ClerkUserWebhookEvent;
         } catch (err) {
             console.error("Clerk webhook verification failed:", err);
             return new Response("Invalid signature", { status: 400 });

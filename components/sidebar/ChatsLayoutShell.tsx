@@ -14,7 +14,7 @@ export function ChatsLayoutShell({
     children: React.ReactNode;
 }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
+    const [desktopSidebarCollapsed] = useState(false);
     const ensureUser = useMutation(api.users.ensureUser);
 
     // Auto-create user record if missing

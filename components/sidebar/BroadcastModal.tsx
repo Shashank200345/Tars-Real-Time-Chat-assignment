@@ -42,7 +42,7 @@ export function BroadcastModal({
             toast.success(`Broadcast sent to ${count} conversations!`);
             setMessage("");
             onOpenChange(false);
-        } catch (error) {
+        } catch {
             toast.error("Failed to send broadcast.");
         } finally {
             setIsSending(false);

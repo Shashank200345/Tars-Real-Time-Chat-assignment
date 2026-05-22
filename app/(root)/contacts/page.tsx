@@ -10,6 +10,7 @@ import { Loader2, MessageSquare, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function ContactsPage() {
     const router = useRouter();
@@ -18,7 +19,7 @@ export default function ContactsPage() {
     const getOrCreateDM = useMutation(api.conversations.getOrCreateDM);
 
     const [searchQuery, setSearchQuery] = useState("");
-    const [isCreatingDM, setIsCreatingDM] = useState<string | null>(null);
+    const [isCreatingDM, setIsCreatingDM] = useState<Id<"users"> | null>(null);
 
     const isLoading = currentUser === undefined || allUsers === undefined;
 
@@ -28,10 +29,10 @@ export default function ContactsPage() {
             user.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleMessageContact = async (userId: string) => {
+    const handleMessageContact = async (userId: Id<"users">) => {
         setIsCreatingDM(userId);
         try {
-            const conversationId = await getOrCreateDM({ otherUserId: userId as any });
+            const conversationId = await getOrCreateDM({ otherUserId: userId });
             router.push(`/chats/${conversationId}`);
         } catch (error) {
             toast.error("Failed to start conversation");

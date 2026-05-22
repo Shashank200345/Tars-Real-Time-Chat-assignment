@@ -17,6 +17,7 @@ import { UserAvatar } from "../UserAvatar";
 import { toast } from "sonner";
 import { Loader2, Users, Search, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Id } from "@/convex/_generated/dataModel";
 
 export function CreateGroupModal({
     open,
@@ -32,7 +33,7 @@ export function CreateGroupModal({
 
     const [groupName, setGroupName] = useState("");
     const [search, setSearch] = useState("");
-    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<Id<"users">[]>([]);
     const [isCreating, setIsCreating] = useState(false);
 
     // Filter out the current user from the list
@@ -41,7 +42,7 @@ export function CreateGroupModal({
         u.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    const toggleUser = (userId: string) => {
+    const toggleUser = (userId: Id<"users">) => {
         setSelectedUserIds((prev) =>
             prev.includes(userId)
                 ? prev.filter((id) => id !== userId)
@@ -63,7 +64,7 @@ export function CreateGroupModal({
         try {
             const conversationId = await createGroup({
                 groupName: groupName.trim(),
-                participantIds: selectedUserIds as any[],
+                participantIds: selectedUserIds,
             });
 
             toast.success("Group created successfully!");
@@ -71,8 +72,8 @@ export function CreateGroupModal({
             setSelectedUserIds([]);
             onOpenChange(false);
             router.push(`/chats/${conversationId}`);
-        } catch (error: any) {
-            toast.error(error.message || "Failed to create group");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "Failed to create group");
         } finally {
             setIsCreating(false);
         }

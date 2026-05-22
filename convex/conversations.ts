@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
@@ -158,13 +158,13 @@ export const createGroup = mutation({
 });
 
 // Helper validation function
-const validateAdmin = async (ctx: any, conversationId: Id<"conversations">) => {
+const validateAdmin = async (ctx: MutationCtx, conversationId: Id<"conversations">) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
 
     const me = await ctx.db
         .query("users")
-        .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))
+        .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
         .unique();
 
     if (!me) throw new Error("User not found");
@@ -254,7 +254,7 @@ export const removeAdmin = mutation({
         userId: v.id("users"),
     },
     handler: async (ctx, args) => {
-        const { conv, me } = await validateAdmin(ctx, args.conversationId);
+        const { conv } = await validateAdmin(ctx, args.conversationId);
 
         const admins = conv.adminIds || [];
         if (!admins.includes(args.userId)) return; // Not an admin

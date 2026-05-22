@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { UserAvatar } from "../UserAvatar";
@@ -10,6 +10,7 @@ import { getAnimatedEmojiUrl, splitEmojis } from "@/utils/animatedEmoji";
 import { cn } from "@/lib/utils";
 import { Trash2, Reply, Forward, Copy, Check, Download, FileText, Pin, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "🎉", "🔥"];
 
@@ -166,10 +167,13 @@ export function MessageBubble({
                             isMe ? "justify-end" : "justify-start"
                         )}>
                             {emojiList.map((emoji, i) => (
-                                <img
+                                <Image
                                     key={i}
                                     src={getAnimatedEmojiUrl(emoji)}
                                     alt={emoji}
+                                    width={64}
+                                    height={64}
+                                    unoptimized
                                     className="w-16 h-16 object-contain drop-shadow-lg"
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement;
@@ -196,10 +200,13 @@ export function MessageBubble({
                             {/* Image/File attachment */}
                             {message.fileUrl && message.fileType?.startsWith("image/") && (
                                 <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                                    <img
+                                    <Image
                                         src={message.fileUrl}
                                         alt={message.fileName || "Image"}
-                                        className="max-w-full max-h-72 rounded-xl object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                        width={400}
+                                        height={288}
+                                        unoptimized
+                                        className="max-w-full max-h-72 w-auto h-auto rounded-xl object-contain cursor-pointer hover:opacity-90 transition-opacity"
                                     />
                                 </a>
                             )}

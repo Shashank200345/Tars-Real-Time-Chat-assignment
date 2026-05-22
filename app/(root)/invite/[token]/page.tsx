@@ -38,8 +38,8 @@ export default function InvitePage() {
             const conversationId = await joinGroup({ inviteToken: token });
             toast.success("Successfully joined the group!");
             router.push(`/chats/${conversationId}`);
-        } catch (error: any) {
-            toast.error(error.message || "Failed to join group");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "Failed to join group");
         } finally {
             setIsJoining(false);
         }

@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Send, Smile, X, Reply, Paperclip, Image, FileText, Loader2 } from "lucide-react";
+import { Send, Smile, X, Reply, Paperclip, FileText, Loader2 } from "lucide-react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 
@@ -73,7 +74,7 @@ export function MessageInput({
         }
 
         try {
-            let fileId: any = undefined;
+            let fileId: Id<"_storage"> | undefined = undefined;
             let fileName: string | undefined = undefined;
             let fileType: string | undefined = undefined;
 
@@ -165,15 +166,13 @@ export function MessageInput({
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const isImage = (type?: string) => type?.startsWith("image/");
-
     return (
         <div className="bg-background pt-2 pb-6 px-6 shrink-0 relative mt-auto z-10">
             {/* File preview bar */}
             {selectedFile && (
                 <div className="flex items-center gap-3 mb-2 bg-secondary/50 border border-border rounded-xl px-4 py-2.5 animate-fade-in">
                     {filePreviewUrl ? (
-                        <img src={filePreviewUrl} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-border" />
+                        <Image src={filePreviewUrl} alt="Preview" width={40} height={40} unoptimized className="w-10 h-10 rounded-lg object-cover border border-border" />
                     ) : (
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                             <FileText className="w-5 h-5 text-primary" />

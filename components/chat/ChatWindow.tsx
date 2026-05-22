@@ -198,7 +198,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
                         return (
                             <MessageBubble
                                 key={message._id}
-                                message={message as any}
+                                message={message}
                                 isMe={isMe}
                                 highlight={searchMatchIds.has(message._id)}
                                 onReply={(msg) => setReplyTo(msg)}
