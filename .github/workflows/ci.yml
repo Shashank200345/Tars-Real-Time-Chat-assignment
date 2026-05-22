@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  # ── Job 1: Lint ─────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --frozen-lockfile
+
+      - name: Run ESLint
+        run: npm run lint
+
+  # ── Job 2: Type check ───────────────────────────────────────────────────────
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --frozen-lockfile
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+  # ── Job 3: Docker Build, Push & Trivy Scan ──────────────────────────────────
+  # Only runs on master after lint and typecheck pass
+  docker-build-push:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+      security-events: write  # needed for Trivy SARIF upload
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/tars-real-time-chat-assignment:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/tars-real-time-chat-assignment:latest
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Trivy Image Scan ────────────────────────────────────────────────────
+      # Scans the built Docker image for OS and package vulnerabilities
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/tars-real-time-chat-assignment:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH  # only flag CRITICAL and HIGH severity
+          exit-code: '1'           # fail pipeline if vulnerabilities found
+          ignore-unfixed: true     # ignore vulns with no fix available yet
+
+      # Upload Trivy results to GitHub Security tab
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif

@@ -1,0 +1,59 @@
+name: CD
+
+# ── When does this run? ────────────────────────────────────────────────────────
+# Only when the CI workflow completes successfully on master.
+# This guarantees CD never runs if lint, type-check, or Docker build failed.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    # Double-check CI actually passed (workflow_run fires on both success/failure)
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      # We need the SHA from the CI run that triggered this workflow
+      - name: Get commit SHA from triggering CI run
+        id: sha
+        run: echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+
+      # SSH into the VPS and run the deploy script
+      # appleboy/ssh-action handles the connection; your private key lives in secrets
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          # Pass the SHA so deploy.sh knows which image to pull
+          envs: DEPLOY_SHA
+          script: |
+            export DEPLOY_SHA=${{ steps.sha.outputs.sha }}
+            bash /opt/tars/deploy.sh "$DEPLOY_SHA"
+
+      # Notify your team on success (optional but professional)
+      - name: Notify Slack on success
+        if: success()
+        run: |
+          curl -s -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-type: application/json' \
+            -d '{
+              "text": "✅ Tars Chat deployed successfully!\nSHA: `${{ steps.sha.outputs.sha }}`\nCommit: ${{ github.event.workflow_run.head_commit.message }}"
+            }'
+
+      # Notify on failure too
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          curl -s -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-type: application/json' \
+            -d '{
+              "text": "❌ Tars Chat deployment FAILED — rollback triggered.\nSHA: `${{ steps.sha.outputs.sha }}`"
+            }'
